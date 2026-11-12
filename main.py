@@ -302,6 +302,58 @@ async def claim_owner(interaction: discord.Interaction, key: str):
     else:
         await interaction.response.send_message("❌ Wrong key", ephemeral=True)
 
+@bot.tree.command(name="hub-edit", description="Edit a bot's description / emoji / category (Staff)")
+async def hub_edit(interaction: discord.Interaction, name: str, description: str = None, emoji: str = None, category: str = None):
+    if not interaction.user.guild_permissions.manage_messages:
+        return await interaction.response.send_message("❌ Need Manage Messages!", ephemeral=True)
+    found = find_bot(name)
+    if not found:
+        return await interaction.response.send_message(f"❌ Bot `{name}` not found! Do `/hub` to see list.", ephemeral=True)
+    if description is not None:
+        db["bots"][found]["desc"] = description
+    if emoji is not None:
+        db["bots"][found]["emoji"] = emoji
+    if category is not None:
+        db["bots"][found]["category"] = category
+    save()
+    data = db["bots"][found]
+    embed = discord.Embed(title=f"✅ Updated {found}", description=data.get("desc",""), color=0x22C55E)
+    embed.add_field(name="Emoji", value=data.get("emoji","🤖"), inline=True)
+    embed.add_field(name="Category", value=data.get("category","Other"), inline=True)
+    embed.add_field(name="Price", value=data.get("premium_price","Free"), inline=True)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="hub-price", description="Set premium price for a bot (Staff)")
+async def hub_price(interaction: discord.Interaction, name: str, price: str, plan: str = None):
+    if not interaction.user.guild_permissions.manage_messages:
+        return await interaction.response.send_message("❌ Need Manage Messages!", ephemeral=True)
+    found = find_bot(name)
+    if not found:
+        return await interaction.response.send_message(f"❌ Bot `{name}` not found!", ephemeral=True)
+    db["bots"][found]["premium_price"] = price
+    if plan is not None:
+        db["bots"][found]["premium"] = plan
+    else:
+        # Auto-set plan from price
+        if price.lower() in ["free", "0", "$0"]:
+            db["bots"][found]["premium"] = "Free"
+        else:
+            db["bots"][found]["premium"] = "Premium"
+    save()
+    data = db["bots"][found]
+    await interaction.response.send_message(f"💎 **{found}** price updated!\n**Price:** {data['premium_price']}\n**Plan:** {data['premium']}\n**Desc:** {data.get('desc','')}", ephemeral=True)
+
+@bot.tree.command(name="hub-invite", description="Change a bot's invite link (Staff)")
+async def hub_invite(interaction: discord.Interaction, name: str, invite: str):
+    if not interaction.user.guild_permissions.manage_messages:
+        return await interaction.response.send_message("❌ Need Manage Messages!", ephemeral=True)
+    found = find_bot(name)
+    if not found:
+        return await interaction.response.send_message(f"❌ Bot `{name}` not found!", ephemeral=True)
+    db["bots"][found]["invite"] = invite
+    save()
+    await interaction.response.send_message(f"✅ Invite updated for **{found}**\n{invite}", ephemeral=True)
+    
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot.run(TOKEN.strip() if TOKEN else '')
             
