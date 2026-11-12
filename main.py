@@ -52,8 +52,7 @@ def save(): json.dump(db, open(DB_FILE, 'w'), indent=2)
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
-bot = commands.Bot(command_prefix="!", intents=intents)
-
+bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 # ---------- HELPERS ----------
 def find_bot(name: str):
     for k in db["bots"]:
